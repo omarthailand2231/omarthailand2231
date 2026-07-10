@@ -4,6 +4,7 @@ import base64
 import io
 import json
 import math
+import traceback
 import urllib.request
 
 LAT, LON = 13.7563, 100.5018
@@ -113,6 +114,9 @@ def fetch_radar():
             "map_light_b64": _compose("light_all", radar_panel),
         }
     except Exception:
+        # Keep the banner alive on any failure, but leave the cause in the
+        # Actions log so an API change is distinguishable from an outage.
+        traceback.print_exc()
         return None
 
 

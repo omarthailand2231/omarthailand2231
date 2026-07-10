@@ -72,7 +72,9 @@ def build_svg(p, indicator, now, filename, radar):
     ready_y = PAD_TOP + len(lines) * LH + 2 * LH - 10
     prompt_y = ready_y + LH + 4
     panel_y = prompt_y + 20
-    panel_h = 356
+    # Radar failure collapses the panel to its single FAIL line instead of
+    # leaving a blank framed void at the bottom of the card.
+    panel_h = 356 if radar else 0
     H = panel_y + panel_h + 30
     INPUT_CHAR_DUR = 0.014
     boot_command = "$ boot omar.sys --verbose"

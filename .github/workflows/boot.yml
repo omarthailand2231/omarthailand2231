@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: boot
+  cancel-in-progress: false
+
 jobs:
   boot:
     runs-on: ubuntu-latest
@@ -18,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: install image support
-        run: pip install pillow
+        run: python3 -m pip install pillow
 
       - name: generate banners
         run: python3 scripts/generate_boot.py
