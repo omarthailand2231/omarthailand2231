@@ -19,16 +19,15 @@ from datetime import datetime, timedelta, timezone
 import ai_message
 import fallback_messages
 
-# GitHub's official color scheme
+# GitHub's native canvas colours. The SVG itself stays transparent so the board
+# feels integrated with the profile in either colour scheme.
 DARK = {
-    "bg": "#0d1117", "board_bg": "#161b22", "cell_bg": "#0d1117",
-    "border": "#30363d", "split": "#30363d", "flap_text": "#c9d1d9",
-    "dim": "#8b949e",
+    "cell_bg": "#161b22", "border": "#30363d", "split": "#21262d",
+    "flap_text": "#c9d1d9",
 }
 LIGHT = {
-    "bg": "#ffffff", "board_bg": "#f6f8fa", "cell_bg": "#eaeef2",
-    "border": "#d0d7de", "split": "#d0d7de", "flap_text": "#24292f",
-    "dim": "#57606a",
+    "cell_bg": "#f6f8fa", "border": "#d0d7de", "split": "#d8dee4",
+    "flap_text": "#24292f",
 }
 
 # Vestaboard-style accent tiles that occasionally flash mid-scramble.
@@ -56,7 +55,6 @@ ROWS = 7
 CELL_W, CELL_H, GAP = 24, 46, 3
 CELL_RX = 2
 PAD = 18
-CAPTION_H = 28
 FONT_SIZE = 19
 
 SCRAMBLE_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -170,23 +168,18 @@ def _format_board_lines(lines):
     )
 
 
-def build_svg(p, lines, now, filename):
+def build_svg(p, lines, _now, filename):
     board_w = COLS * CELL_W + (COLS - 1) * GAP
     board_h = ROWS * CELL_H + (ROWS - 1) * GAP
     W = board_w + PAD * 2
-    H = board_h + PAD * 2 + CAPTION_H
+    H = board_h + PAD * 2
 
-    # Calculate center positioning
-    center_x = W / 2
     board_x = (W - board_w) / 2
 
     svg = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" '
         f'width="{W}" height="{H}" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" '
         f'font-size="{FONT_SIZE}">',
-        f'<rect width="{W}" height="{H}" rx="8" fill="{p["bg"]}"/>',
-        f'<rect x="{board_x - 8}" y="{PAD - 8}" width="{board_w + 16}" height="{board_h + 16}" '
-        f'rx="6" fill="{p["board_bg"]}"/>',
     ]
 
     # Treat the board as a display, not a typewriter: centre the message block
@@ -198,10 +191,6 @@ def build_svg(p, lines, now, filename):
             cell_delay = ROW_START[row] + col * 0.014 + random.uniform(0, 0.1)
             svg.append(_flap_cell(p, x, y, ch, cell_delay))
 
-    caption_y = PAD + board_h + 20
-    svg.append(
-        f'<text x="{center_x}" y="{caption_y}" text-anchor="middle" fill="{p["dim"]}" font-size="12">last refresh: {now}</text>'
-    )
     svg.append("</svg>")
     with open(filename, "w") as f:
         f.write("".join(svg))
