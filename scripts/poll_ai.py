@@ -2,13 +2,16 @@
 """Continuously poll the AI every 10 seconds and regenerate boot.svg files.
 
 Runs indefinitely, calling the AI at a 10-second interval and rebuilding
-the split-flap board SVGs with fresh content.
+the split-flap board SVGs with fresh content. Falls back to random custom
+messages if the API is unavailable.
 """
 import time
+import random
 from datetime import datetime, timedelta, timezone
 
 import ai_message
 import generate_boot
+import fallback_messages
 
 
 def poll_loop(interval_seconds=10):
@@ -26,13 +29,17 @@ def poll_loop(interval_seconds=10):
             lines = ai_message.get_message(
                 claude_status=generate_boot.STATUS_TEXT.get(indicator, "status unreachable"),
                 ict_time=now,
-            ) or generate_boot.FALLBACK_LINES
+            )
+            
+            # Use random fallback if AI unavailable
+            if not lines:
+                lines = random.choice(fallback_messages.FALLBACK_MESSAGES)
             
             # Rebuild SVGs
             generate_boot.build_svg(generate_boot.DARK, lines, now, "boot.svg")
             generate_boot.build_svg(generate_boot.LIGHT, lines, now, "boot-light.svg")
             
-            source = "ai" if lines is not generate_boot.FALLBACK_LINES else "fallback"
+            source = "ai" if lines not in fallback_messages.FALLBACK_MESSAGES else "fallback"
             timestamp = datetime.now().strftime("%H:%M:%S")
             print(f"[{timestamp}] SVGs updated — message: {source} {lines!r}, claude: {indicator}")
             
