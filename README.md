@@ -1,16 +1,33 @@
-## Hi there 👋
+# hi, i'm Omar 👋
 
-<!--
-**omarthailand2231/omarthailand2231** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+frontend dev @ **Atomtech** · building things on the side, constantly
 
-Here are some ideas to get you started:
+🇹🇭 bangkok · react/typescript by day, swift & java by necessity
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+---
+
+### 🔭 currently building
+
+- **Sol** — a macOS menubar AI agent with screen awareness and a panic-stop button. swift + local LLM brain.
+- **Blood AI** — my flagship discord bot platform (~13k lines), mid-refactor into a plugin architecture
+- **`127.0.0.1:67`** — autonomous sumo robot for a STEM competition. simplicity wins fights.
+
+### 🛠 stack
+
+![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-F05138?style=flat&logo=swift&logoColor=white)
+![Java](https://img.shields.io/badge/Java-ED8B00?style=flat&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat&logo=springboot&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+
+### 📊 stats
+
+![stats](https://github-readme-stats.vercel.app/api?username=YOUR_USERNAME&show_icons=true&theme=tokyonight&hide_border=true)
+![langs](https://github-readme-stats.vercel.app/api/top-langs/?username=YOUR_USERNAME&layout=compact&theme=tokyonight&hide_border=true)
+
+---
+
+🌩 weather radar enjoyer · 📷 photography (irl + in-game) · 🎧 MF DOOM / Radiohead / Chopin
+
+> "the best solution is usually the boring one that works"
