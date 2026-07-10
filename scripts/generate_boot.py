@@ -54,17 +54,17 @@ def build_svg(p, indicator, now, filename, radar):
     # Output prints instantly; the small gaps make a burst feel like a real
     # process emitting lines rather than a terminal typing them.
     lines = [
-        ("OK", p["green"], "mounting /projects", "", p["dim"], 0.06, 0.0),
-        ("OK", p["green"], "react runtime", "attached", p["dim"], 0.07, 0.05),
-        ("OK", p["green"], "swift toolchain", "loaded", p["dim"], 0.08, 0.9),
-        ("OK", p["green"], "sol.agent", "panic-stop armed", p["dim"], 0.07, 0.15),
-        ("OK", p["green"], "blood_ai", "13k lines, refactoring", p["dim"], 0.08, 0.4),
-        ("OK", p["green"], "sumo.bot", "listening on 127.0.0.1:67", p["dim"], 0.06, 0.1),
-        ("OK", p["green"], "atom.cat", "roaming somewhere", p["dim"], 0.06, 0.05),
-        (tag, scolor, "claude api", status_text, scolor, 0.08, 0.1),
-        ("OK", p["green"], "omar.mood", mood, p["dim"], 0.06, 0.0),
+        ("OK", p["green"], "mounting /projects", "", p["dim"], 0.04, 0.0),
+        ("OK", p["green"], "react runtime", "attached", p["dim"], 0.04, 0.0),
+        ("OK", p["green"], "swift toolchain", "loaded", p["dim"], 0.04, 0.21),
+        ("OK", p["green"], "sol.agent", "panic-stop armed", p["dim"], 0.04, 0.0),
+        ("OK", p["green"], "blood_ai", "13k lines, refactoring", p["dim"], 0.04, 0.06),
+        ("OK", p["green"], "sumo.bot", "listening on 127.0.0.1:67", p["dim"], 0.04, 0.0),
+        ("OK", p["green"], "atom.cat", "roaming somewhere", p["dim"], 0.03, 0.0),
+        (tag, scolor, "claude api", status_text, scolor, 0.04, 0.0),
+        ("OK", p["green"], "omar.mood", mood, p["dim"], 0.03, 0.0),
     ]
-    STALL = 1.4  # network wait before the claude api line
+    STALL = 0.6  # network wait before the claude api line — the one dramatic beat
 
     W, LH, PAD_TOP = 780, 26, 64
     # The post-boot prompt and its radar panel are intentionally part of the
@@ -74,12 +74,12 @@ def build_svg(p, indicator, now, filename, radar):
     panel_y = prompt_y + 20
     panel_h = 356
     H = panel_y + panel_h + 30
-    INPUT_CHAR_DUR = 0.055
+    INPUT_CHAR_DUR = 0.014
     boot_command = "$ boot omar.sys --verbose"
     boot_type_dur = len(boot_command) * INPUT_CHAR_DUR
-    boot_begin = 0.2
+    boot_begin = 0.05
     # Leave a natural beat after pressing Enter before the process responds.
-    t = boot_begin + boot_type_dur + 0.12
+    t = boot_begin + boot_type_dur + 0.08
 
     svg = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" '
@@ -110,7 +110,7 @@ def build_svg(p, indicator, now, filename, radar):
             for d in range(3):
                 wait.append(
                     f'<text x="{28 + d * 12}" y="{y}" opacity="0">.'
-                    f'<animate attributeName="opacity" to="1" begin="{t + 0.3 + d * 0.35:.2f}s" dur="0.01s" fill="freeze"/>'
+                    f'<animate attributeName="opacity" to="1" begin="{t + 0.1 + d * 0.13:.2f}s" dur="0.01s" fill="freeze"/>'
                     f'</text>'
                 )
             wait.append(f'<animate attributeName="opacity" to="0" begin="{t + STALL:.2f}s" dur="0.01s" fill="freeze"/></g>')
@@ -126,8 +126,8 @@ def build_svg(p, indicator, now, filename, radar):
         t += burst_gap + pause_after
 
     y += LH * 2 - 10
-    ready_begin = t + 0.3
-    history_begin = ready_begin + 0.8
+    ready_begin = t + 0.08
+    history_begin = ready_begin + 0.15
     svg.append(
         f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{ready_begin:.2f}s" dur="0.01s" fill="freeze"/>'
         f'<text x="28" y="{y}" fill="{p["accent"]}">ready.</text>'
@@ -150,13 +150,13 @@ def build_svg(p, indicator, now, filename, radar):
         svg.append(
             f'<text x="28" y="{prompt_y}" fill="{p["text"]}" opacity="0">{command}'
             f'<animate attributeName="opacity" values="0;1;1;0" '
-            f'keyTimes="0;0.01;0.99;1" begin="{history_begin + i * 0.45:.2f}s" '
-            f'dur="0.45s" fill="freeze"/></text>'
+            f'keyTimes="0;0.01;0.99;1" begin="{history_begin + i * 0.15:.2f}s" '
+            f'dur="0.15s" fill="freeze"/></text>'
         )
 
     radar_command = "$ python3 radar_bangkok.py"
     radar_type_dur = len(radar_command) * INPUT_CHAR_DUR
-    type_begin = history_begin + len(history) * 0.45 + 0.12
+    type_begin = history_begin + len(history) * 0.15 + 0.04
     command_clip = "radar-command"
     svg.append(
         f'<clipPath id="{command_clip}"><rect x="28" y="{prompt_y - 18}" width="0" height="24">'
@@ -166,7 +166,7 @@ def build_svg(p, indicator, now, filename, radar):
         f'<g clip-path="url(#{command_clip})"><text x="28" y="{prompt_y}" fill="{p["accent"]}">{radar_command}</text></g>'
     )
 
-    panel_begin = type_begin + radar_type_dur + 0.4
+    panel_begin = type_begin + radar_type_dur + 0.2
     if radar is None:
         svg.append(
             f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{panel_begin:.2f}s" dur="0.01s" fill="freeze"/>'
