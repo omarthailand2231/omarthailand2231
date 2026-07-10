@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="238" viewBox="0 0 760 238" role="img" aria-labelledby="title desc">
+  <title id="title">Omar's terminal profile</title>
+  <desc id="desc">A short terminal session introducing Omar and his current projects.</desc>
+  <style>@media (prefers-reduced-motion: reduce) { animate, set { display: none; } }</style>
+
+  <rect x="0.5" y="0.5" width="759" height="237" rx="11.5" fill="#0d1117" stroke="#30363d"/>
+  <path d="M12 1h736a11 11 0 0 1 11 11v25H1V12A11 11 0 0 1 12 1Z" fill="#161b22"/>
+  <path d="M1 37.5h758" stroke="#30363d"/>
+
+  <circle cx="21" cy="19" r="6" fill="#ff5f57"/>
+  <circle cx="43" cy="19" r="6" fill="#febc2e"/>
+  <circle cx="65" cy="19" r="6" fill="#28c840"/>
+  <text x="380" y="23" text-anchor="middle" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="12">omar — zsh — 80×24</text>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="14">
+    <text x="22" y="65" fill="#8b949e">Last login: Thu Jul 10 16:01:22 on ttys001</text>
+
+    <g>
+      <text x="22" y="94" fill="#3fb950">omar</text>
+      <text x="58" y="94" fill="#8b949e">@</text>
+      <text x="67" y="94" fill="#79c0ff">bangkok</text>
+      <text x="133" y="94" fill="#c9d1d9">~ %</text>
+      <clipPath id="type-whoami">
+        <rect x="169" y="78" width="58" height="22">
+          <animate attributeName="width" from="0" to="58" begin="0s" dur="0.7s" fill="freeze"/>
+        </rect>
+      </clipPath>
+      <text x="169" y="94" fill="#f0f6fc" clip-path="url(#type-whoami)">whoami</text>
+    </g>
+
+    <g>
+      <set attributeName="opacity" to="0" begin="0s" dur="0.78s"/>
+      <text x="22" y="123" fill="#f0f6fc">Omar — frontend developer @ Atomtech</text>
+    </g>
+
+    <g>
+      <set attributeName="opacity" to="0" begin="0s" dur="0.95s"/>
+      <text x="22" y="152" fill="#3fb950">omar</text>
+      <text x="58" y="152" fill="#8b949e">@</text>
+      <text x="67" y="152" fill="#79c0ff">bangkok</text>
+      <text x="133" y="152" fill="#c9d1d9">~ %</text>
+      <clipPath id="type-focus">
+        <rect x="169" y="136" width="176" height="22">
+          <animate attributeName="width" from="0" to="176" begin="0.95s" dur="0.89s" fill="freeze"/>
+        </rect>
+      </clipPath>
+      <text x="169" y="152" fill="#f0f6fc" clip-path="url(#type-focus)">cat current-focus.txt</text>
+    </g>
+
+    <g>
+      <set attributeName="opacity" to="0" begin="0s" dur="1.92s"/>
+      <text x="22" y="181" fill="#d2a8ff">Sol</text>
+      <text x="50" y="181" fill="#8b949e">·</text>
+      <text x="64" y="181" fill="#79c0ff">Blood AI</text>
+      <text x="130" y="181" fill="#8b949e">·</text>
+      <text x="144" y="181" fill="#ffa657">autonomous sumo robot</text>
+    </g>
+
+    <g>
+      <set attributeName="opacity" to="0" begin="0s" dur="2.08s"/>
+      <text x="22" y="210" fill="#3fb950">omar</text>
+      <text x="58" y="210" fill="#8b949e">@</text>
+      <text x="67" y="210" fill="#79c0ff">bangkok</text>
+      <text x="133" y="210" fill="#c9d1d9">~ %</text>
+      <rect x="169" y="197" width="8" height="16" fill="#c9d1d9">
+        <animate attributeName="opacity" values="1;0;1" begin="2.08s" dur="1s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+  </g>
+</svg>

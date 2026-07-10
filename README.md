@@ -1,38 +1,31 @@
-# hi, i'm Omar 👋
+<h1 align="center">Omar</h1>
 
-frontend dev @ **Atomtech** · building things on the side, constantly
+<p align="center">
+  Frontend developer at <strong>Atomtech</strong> · building useful things on the side
+</p>
 
-🇹🇭 bangkok · react/typescript by day, swift & java by necessity
+<p align="center">
+  <code>Bangkok, Thailand</code> · React & TypeScript by day · Swift & Java when the job calls for it
+</p>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="boot.svg">
-  <img src="boot-light.svg" width="100%" alt="boot sequence">
-</picture>
+<p align="center">
+  <img src="./terminal.svg" width="760" alt="A compact terminal introduction for Omar" />
+</p>
 
----
+## What I'm shipping
 
-### 🔭 currently building
+- **Sol** — a macOS menu bar AI agent with screen awareness, a local-LLM brain, and a panic-stop button.
+- **Blood AI** — my flagship Discord bot platform, currently moving toward a cleaner plugin architecture.
+- **127.0.0.1:67** — an autonomous sumo robot for a STEM competition. Simple, reliable, hard to knock over.
 
-- **Sol** — a macOS menubar AI agent with screen awareness and a panic-stop button. swift + local LLM brain.
-- **Blood AI** — my flagship discord bot platform (~13k lines), mid-refactor into a plugin architecture
-- **`127.0.0.1:67`** — autonomous sumo robot for a STEM competition. simplicity wins fights.
+## Toolbox
 
-### 🛠 stack
+`React` · `TypeScript` · `Swift` · `Java` · `Spring Boot` · `Python`
 
-![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
-![Swift](https://img.shields.io/badge/Swift-F05138?style=flat&logo=swift&logoColor=white)
-![Java](https://img.shields.io/badge/Java-ED8B00?style=flat&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat&logo=springboot&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+I like small interfaces, boring solutions that work, and software that is easy to understand six months later.
 
-### 📊 stats
+## Away from the keyboard
 
-![stats](https://github-readme-stats.vercel.app/api?username=omarthailand2231&show_icons=true&theme=tokyonight&hide_border=true)
-![langs](https://github-readme-stats.vercel.app/api/top-langs/?username=omarthailand2231&layout=compact&theme=tokyonight&hide_border=true)
+Weather radar enthusiast · photography, both real and in-game · MF DOOM, Radiohead, and Chopin
 
----
-
-🌩 weather radar enjoyer · 📷 photography (irl + in-game) · 🎧 MF DOOM / Radiohead / Chopin
-
-> "the best solution is usually the boring one that works"
+> The best solution is usually the boring one that works.
