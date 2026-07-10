@@ -166,12 +166,16 @@ def build_svg(p, lines, now, filename):
     W = board_w + PAD * 2
     H = board_h + PAD * 2 + CAPTION_H
 
+    # Calculate center positioning
+    center_x = W / 2
+    board_x = (W - board_w) / 2
+
     svg = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" '
         f'width="{W}" height="{H}" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" '
         f'font-size="{FONT_SIZE}">',
         f'<rect width="{W}" height="{H}" rx="8" fill="{p["bg"]}"/>',
-        f'<rect x="{PAD - 8}" y="{PAD - 8}" width="{board_w + 16}" height="{board_h + 16}" '
+        f'<rect x="{board_x - 8}" y="{PAD - 8}" width="{board_w + 16}" height="{board_h + 16}" '
         f'rx="6" fill="{p["board_bg"]}"/>',
     ]
 
@@ -179,13 +183,13 @@ def build_svg(p, lines, now, filename):
         text = (lines[row] if row < len(lines) else "").upper().ljust(COLS)[:COLS]
         y = PAD + row * (CELL_H + GAP)
         for col, ch in enumerate(text):
-            x = PAD + col * (CELL_W + GAP)
+            x = board_x + col * (CELL_W + GAP)
             cell_delay = ROW_START[row] + col * 0.014 + random.uniform(0, 0.1)
             svg.append(_flap_cell(p, x, y, ch, cell_delay))
 
     caption_y = PAD + board_h + 20
     svg.append(
-        f'<text x="{PAD}" y="{caption_y}" fill="{p["dim"]}" font-size="12">last refresh: {now}</text>'
+        f'<text x="{center_x}" y="{caption_y}" text-anchor="middle" fill="{p["dim"]}" font-size="12">last refresh: {now}</text>'
     )
     svg.append("</svg>")
     with open(filename, "w") as f:
