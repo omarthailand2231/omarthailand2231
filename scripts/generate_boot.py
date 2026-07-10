@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generates boot.svg (dark) + boot-light.svg — animated boot banners with live Claude status."""
 import json
+import math
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -178,12 +179,26 @@ def build_svg(p, indicator, now, filename, radar):
             f'wind {radar["wind_kmh"]:.0f} km/h · {radar["condition"]}'
         )
         map_y = panel_y + 36
+        # Sweep radius reaches the map corners; the trailing wedge sits 30°
+        # behind the clockwise-rotating beam.
+        cx, cy, radius = 28 + 362, map_y + 140, 390
+        wedge_x = cx + radius * math.cos(math.radians(30))
+        wedge_y = cy - radius * math.sin(math.radians(30))
         svg.append(
             f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{panel_begin:.2f}s" dur="0.01s" fill="freeze"/>'
             f'<rect x="28" y="{panel_y}" width="724" height="{panel_h}" rx="4" fill="{p["bg"]}" stroke="{p["border"]}"/>'
             f'<text x="42" y="{panel_y + 24}" fill="{p["accent"]}">── radar: bangkok ──</text>'
             f'<image x="28" y="{map_y}" width="724" height="280" preserveAspectRatio="none" '
             f'href="data:image/jpeg;base64,{map_b64}"/>'
+            f'<clipPath id="radar-map"><rect x="28" y="{map_y}" width="724" height="280"/></clipPath>'
+            f'<g clip-path="url(#radar-map)"><g>'
+            f'<animateTransform attributeName="transform" type="rotate" '
+            f'from="0 {cx} {cy}" to="360 {cx} {cy}" dur="5s" repeatCount="indefinite"/>'
+            f'<path d="M{cx} {cy} L{wedge_x:.1f} {wedge_y:.1f} A{radius} {radius} 0 0 1 {cx + radius} {cy} Z" '
+            f'fill="{p["green"]}" opacity="0.1"/>'
+            f'<line x1="{cx}" y1="{cy}" x2="{cx + radius}" y2="{cy}" stroke="{p["green"]}" '
+            f'stroke-width="2" opacity="0.45"/>'
+            f'</g></g>'
             f'<text x="742" y="{map_y + 270}" text-anchor="end" fill="{p["text"]}" '
             f'font-size="9" opacity="0.78">© OSM © CARTO</text>'
             f'<text x="42" y="{panel_y + 338}" fill="{p["text"]}">{stats}</text>'
