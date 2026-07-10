@@ -54,6 +54,7 @@ COLS = 24
 ROWS = 7
 CELL_W, CELL_H, GAP = 24, 46, 3
 CELL_RX = 2
+CELL_BORDER_W = 0.85
 PAD = 18
 FONT_SIZE = 19
 
@@ -114,7 +115,7 @@ def _flap_cell(p, x, y, target_char, delay):
     bottom_clip = f"flap-bottom-{cell_id}"
     parts = [
         f'<rect x="{x}" y="{y}" width="{CELL_W}" height="{CELL_H}" rx="{CELL_RX}" ry="{CELL_RX}" '
-        f'fill="{fill0}" stroke="{p["border"]}" stroke-width="1.2">{"".join(bg_anims)}</rect>',
+        f'fill="{fill0}" stroke="{p["border"]}" stroke-width="{CELL_BORDER_W}">{"".join(bg_anims)}</rect>',
         f'<defs>'
         f'<clipPath id="{top_clip}" clipPathUnits="userSpaceOnUse">'
         f'<rect x="{x}" y="{y}" width="{CELL_W}" height="{CELL_H / 2}"/>'
