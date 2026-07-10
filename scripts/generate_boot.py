@@ -18,26 +18,27 @@ from datetime import datetime, timedelta, timezone
 
 import ai_message
 
+# GitHub's official color scheme
 DARK = {
-    "bg": "#0d1117", "board_bg": "#171717", "cell_bg": "#171717",
-    "border": "#000000", "split": "#000000", "flap_text": "#ffffff",
+    "bg": "#0d1117", "board_bg": "#161b22", "cell_bg": "#0d1117",
+    "border": "#30363d", "split": "#30363d", "flap_text": "#c9d1d9",
     "dim": "#8b949e",
 }
 LIGHT = {
-    "bg": "#f6f8fa", "board_bg": "#f5f5f5", "cell_bg": "#e5e5e5",
-    "border": "#d4d4d4", "split": "#a3a3a3", "flap_text": "#262626",
-    "dim": "#59636e",
+    "bg": "#ffffff", "board_bg": "#f6f8fa", "cell_bg": "#eaeef2",
+    "border": "#d0d7de", "split": "#d0d7de", "flap_text": "#24292f",
+    "dim": "#57606a",
 }
 
 # Vestaboard-style accent tiles that occasionally flash mid-scramble.
 ACCENTS = [
-    ("#dc2626", "#ffffff"),
-    ("#ea580c", "#ffffff"),
-    ("#eab308", "#171717"),
-    ("#16a34a", "#ffffff"),
-    ("#2563eb", "#ffffff"),
-    ("#7c3aed", "#ffffff"),
-    ("#f5f5f5", "#171717"),
+    ("#da3633", "#ffffff"),
+    ("#fb8500", "#ffffff"),
+    ("#d29922", "#ffffff"),
+    ("#2da44e", "#ffffff"),
+    ("#0969da", "#ffffff"),
+    ("#6f42c1", "#ffffff"),
+    ("#eaeef2", "#0d1117"),
 ]
 FLASH_CHANCE = 0.15
 
@@ -54,7 +55,7 @@ FALLBACK_LINES = ["STILL SHIPPING", "STILL DEBUGGING"]
 COLS = 24
 ROWS = 7
 CELL_W, CELL_H, GAP = 24, 46, 3
-CELL_RX = 4
+CELL_RX = 2
 PAD = 18
 CAPTION_H = 28
 FONT_SIZE = 19
@@ -169,9 +170,9 @@ def build_svg(p, lines, now, filename):
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" '
         f'width="{W}" height="{H}" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" '
         f'font-size="{FONT_SIZE}">',
-        f'<rect width="{W}" height="{H}" rx="14" fill="{p["bg"]}"/>',
+        f'<rect width="{W}" height="{H}" rx="8" fill="{p["bg"]}"/>',
         f'<rect x="{PAD - 8}" y="{PAD - 8}" width="{board_w + 16}" height="{board_h + 16}" '
-        f'rx="12" fill="{p["board_bg"]}"/>',
+        f'rx="6" fill="{p["board_bg"]}"/>',
     ]
 
     for row in range(ROWS):
