@@ -2,7 +2,8 @@ name: regenerate boot banner
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    # Every 10 minutes, offset from the busiest top-of-hour schedule window.
+    - cron: "3,13,23,33,43,53 * * * *"
   workflow_dispatch:
   push:
     branches: [main]
@@ -13,7 +14,8 @@ permissions:
 
 concurrency:
   group: boot
-  cancel-in-progress: false
+  # A stale queued render can no longer race a newer refresh and fail to push.
+  cancel-in-progress: true
 
 jobs:
   boot:

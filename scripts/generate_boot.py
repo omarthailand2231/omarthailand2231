@@ -17,6 +17,7 @@ import random
 from datetime import datetime, timedelta, timezone
 
 import ai_message
+import fallback_messages
 
 # GitHub's official color scheme
 DARK = {
@@ -49,8 +50,6 @@ STATUS_TEXT = {
     "critical": "major outage",
     "unknown": "status unreachable",
 }
-
-FALLBACK_LINES = ["STILL SHIPPING", "STILL DEBUGGING"]
 
 COLS = 24
 ROWS = 7
@@ -160,6 +159,17 @@ def _flap_cell(p, x, y, target_char, delay):
     return "".join(parts)
 
 
+def _format_board_lines(lines):
+    """Return exactly ROWS board rows with the message centred in both axes."""
+    display_lines = [line.upper()[:COLS].center(COLS) for line in lines[:ROWS]]
+    first_message_row = (ROWS - len(display_lines)) // 2
+    return (
+        [" " * COLS] * first_message_row
+        + display_lines
+        + [" " * COLS] * (ROWS - first_message_row - len(display_lines))
+    )
+
+
 def build_svg(p, lines, now, filename):
     board_w = COLS * CELL_W + (COLS - 1) * GAP
     board_h = ROWS * CELL_H + (ROWS - 1) * GAP
@@ -179,8 +189,9 @@ def build_svg(p, lines, now, filename):
         f'rx="6" fill="{p["board_bg"]}"/>',
     ]
 
-    for row in range(ROWS):
-        text = (lines[row] if row < len(lines) else "").upper().ljust(COLS)[:COLS]
+    # Treat the board as a display, not a typewriter: centre the message block
+    # vertically, then centre each line horizontally in its 24 cells.
+    for row, text in enumerate(_format_board_lines(lines)):
         y = PAD + row * (CELL_H + GAP)
         for col, ch in enumerate(text):
             x = board_x + col * (CELL_W + GAP)
@@ -201,14 +212,15 @@ def main():
     ict = timezone(timedelta(hours=7))
     now = datetime.now(ict).strftime("%Y-%m-%d %H:%M ICT")
 
-    lines = ai_message.get_message(
+    ai_lines = ai_message.get_message(
         claude_status=STATUS_TEXT.get(indicator, "status unreachable"),
         ict_time=now,
-    ) or FALLBACK_LINES
+    )
+    lines = ai_lines or random.choice(fallback_messages.FALLBACK_MESSAGES)
 
     build_svg(DARK, lines, now, "boot.svg")
     build_svg(LIGHT, lines, now, "boot-light.svg")
-    source = "ai" if lines is not FALLBACK_LINES else "fallback"
+    source = "ai" if ai_lines else "fallback"
     print(f"boot.svg + boot-light.svg written — message: {source} {lines!r}, claude: {indicator}")
 
 
