@@ -1,0 +1,29 @@
+name: regenerate boot banner
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["scripts/generate_boot.py"]
+
+permissions:
+  contents: write
+
+jobs:
+  boot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: generate banners
+        run: python3 scripts/generate_boot.py
+
+      - name: commit if changed
+        run: |
+          git config user.name "boot-daemon"
+          git config user.email "actions@github.com"
+          git add boot.svg boot-light.svg
+          git diff --staged --quiet || git commit -m "boot: refresh status"
+          git push

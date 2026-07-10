@@ -5,8 +5,8 @@ frontend dev @ **Atomtech** · building things on the side, constantly
 🇹🇭 bangkok · react/typescript by day, swift & java by necessity
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/6b8ab045-48f6-4fc4-8095-b48607a95755">
-  <img src="https://github.com/user-attachments/assets/8ca4a52c-fe86-4e67-a1ea-edb48d2bcdc9" width="100%" alt="">
+  <source media="(prefers-color-scheme: dark)" srcset="boot.svg">
+  <img src="boot-light.svg" width="100%" alt="boot sequence">
 </picture>
 
 ---
