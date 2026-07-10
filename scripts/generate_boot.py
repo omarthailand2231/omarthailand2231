@@ -49,17 +49,19 @@ def build_svg(p, indicator, now, filename, radar):
     tag, ck, status_text, mood = STATUS_MAP[indicator]
     scolor = p[ck]
 
-    # (tag, tag_color, label, detail, detail_color, type_dur, pause_after)
+    # (tag, tag_color, label, detail, detail_color, burst_gap, pause_after)
+    # Output prints instantly; the small gaps make a burst feel like a real
+    # process emitting lines rather than a terminal typing them.
     lines = [
-        ("OK", p["green"], "mounting /projects", "", p["dim"], 0.15, 0.0),
-        ("OK", p["green"], "react runtime", "attached", p["dim"], 0.2, 0.05),
-        ("OK", p["green"], "swift toolchain", "loaded", p["dim"], 0.25, 0.9),
-        ("OK", p["green"], "sol.agent", "panic-stop armed", p["dim"], 0.3, 0.15),
-        ("OK", p["green"], "blood_ai", "13k lines, refactoring", p["dim"], 0.35, 0.4),
-        ("OK", p["green"], "sumo.bot", "listening on 127.0.0.1:67", p["dim"], 0.2, 0.1),
-        ("OK", p["green"], "atom.cat", "roaming somewhere", p["dim"], 0.15, 0.05),
-        (tag, scolor, "claude api", status_text, scolor, 0.3, 0.1),
-        ("OK", p["green"], "omar.mood", mood, p["dim"], 0.15, 0.0),
+        ("OK", p["green"], "mounting /projects", "", p["dim"], 0.06, 0.0),
+        ("OK", p["green"], "react runtime", "attached", p["dim"], 0.07, 0.05),
+        ("OK", p["green"], "swift toolchain", "loaded", p["dim"], 0.08, 0.9),
+        ("OK", p["green"], "sol.agent", "panic-stop armed", p["dim"], 0.07, 0.15),
+        ("OK", p["green"], "blood_ai", "13k lines, refactoring", p["dim"], 0.08, 0.4),
+        ("OK", p["green"], "sumo.bot", "listening on 127.0.0.1:67", p["dim"], 0.06, 0.1),
+        ("OK", p["green"], "atom.cat", "roaming somewhere", p["dim"], 0.06, 0.05),
+        (tag, scolor, "claude api", status_text, scolor, 0.08, 0.1),
+        ("OK", p["green"], "omar.mood", mood, p["dim"], 0.06, 0.0),
     ]
     STALL = 1.4  # network wait before the claude api line
 
@@ -71,7 +73,12 @@ def build_svg(p, indicator, now, filename, radar):
     panel_y = prompt_y + 20
     panel_h = 356
     H = panel_y + panel_h + 30
-    t = 0.9
+    INPUT_CHAR_DUR = 0.055
+    boot_command = "$ boot omar.sys --verbose"
+    boot_type_dur = len(boot_command) * INPUT_CHAR_DUR
+    boot_begin = 0.2
+    # Leave a natural beat after pressing Enter before the process responds.
+    t = boot_begin + boot_type_dur + 0.12
 
     svg = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" '
@@ -87,14 +94,17 @@ def build_svg(p, indicator, now, filename, radar):
 
     y = PAD_TOP
     svg.append(
-        f'<g opacity="0"><animate attributeName="opacity" to="1" begin="0.2s" dur="0.01s" fill="freeze"/>'
-        f'<text x="28" y="{y}" fill="{p["accent"]}">$ boot omar.sys --verbose</text></g>'
+        f'<clipPath id="boot-command"><rect x="28" y="{y - 18}" width="0" height="24">'
+        f'<animate attributeName="width" from="0" to="{len(boot_command) * 9}" '
+        f'begin="{boot_begin:.2f}s" dur="{boot_type_dur:.2f}s" fill="freeze"/>'
+        f'</rect></clipPath>'
+        f'<g clip-path="url(#boot-command)"><text x="28" y="{y}" fill="{p["accent"]}">{boot_command}</text></g>'
     )
 
-    for i, (tg, tc, label, detail, dc, type_dur, pause_after) in enumerate(lines):
+    for tg, tc, label, detail, dc, burst_gap, pause_after in lines:
         y += LH
         if label == "claude api":
-            # progress dots during the stall, hidden the instant the wipe starts
+            # Progress dots during the stall, hidden when the API result prints.
             wait = [f'<g fill="{p["dim"]}">']
             for d in range(3):
                 wait.append(
@@ -105,18 +115,14 @@ def build_svg(p, indicator, now, filename, radar):
             wait.append(f'<animate attributeName="opacity" to="0" begin="{t + STALL:.2f}s" dur="0.01s" fill="freeze"/></g>')
             svg.append("".join(wait))
             t += STALL
-        cid = f"c{i}"
-        svg.append(f'<clipPath id="{cid}"><rect x="0" y="{y - 18}" width="0" height="24">'
-                   f'<animate attributeName="width" from="0" to="{W}" begin="{t:.2f}s" dur="{type_dur}s" fill="freeze"/>'
-                   f'</rect></clipPath>')
         dots = "." * max(2, 28 - len(label))
         detail_part = f' <tspan fill="{dc}">{detail}</tspan>' if detail else ""
         svg.append(
-            f'<g clip-path="url(#{cid})">'
+            f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{t:.2f}s" dur="0.01s" fill="freeze"/>'
             f'<text x="28" y="{y}" fill="{p["text"]}">[ <tspan fill="{tc}">{tg}</tspan> ] '
             f'{label} <tspan fill="{p["dots"]}">{dots}</tspan>{detail_part}</text></g>'
         )
-        t += type_dur + pause_after
+        t += burst_gap + pause_after
 
     y += LH * 2 - 10
     ready_begin = t + 0.3
@@ -146,23 +152,23 @@ def build_svg(p, indicator, now, filename, radar):
             f'dur="0.45s" fill="freeze"/></text>'
         )
 
+    radar_command = "$ python3 radar_bangkok.py"
+    radar_type_dur = len(radar_command) * INPUT_CHAR_DUR
     type_begin = history_begin + len(history) * 0.45 + 0.12
     command_clip = "radar-command"
     svg.append(
         f'<clipPath id="{command_clip}"><rect x="28" y="{prompt_y - 18}" width="0" height="24">'
-        f'<animate attributeName="width" from="0" to="300" begin="{type_begin:.2f}s" dur="0.7s" fill="freeze"/>'
+        f'<animate attributeName="width" from="0" to="{len(radar_command) * 9}" '
+        f'begin="{type_begin:.2f}s" dur="{radar_type_dur:.2f}s" fill="freeze"/>'
         f'</rect></clipPath>'
-        f'<g clip-path="url(#{command_clip})"><text x="28" y="{prompt_y}" fill="{p["accent"]}">$ python3 radar_bangkok.py</text></g>'
+        f'<g clip-path="url(#{command_clip})"><text x="28" y="{prompt_y}" fill="{p["accent"]}">{radar_command}</text></g>'
     )
 
-    panel_begin = type_begin + 0.7 + 0.4
-    panel_clip = "radar-panel"
+    panel_begin = type_begin + radar_type_dur + 0.4
     if radar is None:
         svg.append(
-            f'<clipPath id="{panel_clip}"><rect x="28" y="{panel_y - 18}" width="0" height="24">'
-            f'<animate attributeName="width" from="0" to="724" begin="{panel_begin:.2f}s" dur="0.5s" fill="freeze"/>'
-            f'</rect></clipPath>'
-            f'<g clip-path="url(#{panel_clip})"><text x="28" y="{panel_y}" fill="{p["red"]}">[ FAIL ] radar_bangkok.py ... no signal</text></g>'
+            f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{panel_begin:.2f}s" dur="0.01s" fill="freeze"/>'
+            f'<text x="28" y="{panel_y}" fill="{p["red"]}">[ FAIL ] radar_bangkok.py ... no signal</text></g>'
         )
     else:
         map_b64 = radar["map_dark_b64"] if p is DARK else radar["map_light_b64"]
@@ -173,10 +179,7 @@ def build_svg(p, indicator, now, filename, radar):
         map_y = panel_y + 36
         center_x, center_y = 28 + 724 / 2, map_y + 280 / 2
         svg.append(
-            f'<clipPath id="{panel_clip}"><rect x="28" y="{panel_y}" width="0" height="{panel_h}">'
-            f'<animate attributeName="width" from="0" to="724" begin="{panel_begin:.2f}s" dur="0.5s" fill="freeze"/>'
-            f'</rect></clipPath>'
-            f'<g clip-path="url(#{panel_clip})">'
+            f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{panel_begin:.2f}s" dur="0.01s" fill="freeze"/>'
             f'<rect x="28" y="{panel_y}" width="724" height="{panel_h}" rx="4" fill="{p["bg"]}" stroke="{p["border"]}"/>'
             f'<text x="42" y="{panel_y + 24}" fill="{p["accent"]}">── radar: bangkok ──</text>'
             f'<image x="28" y="{map_y}" width="724" height="280" preserveAspectRatio="none" '
@@ -187,11 +190,10 @@ def build_svg(p, indicator, now, filename, radar):
             f'</g>'
         )
 
-        # The sweep is deliberately outside the reveal clip so it keeps
-        # rotating indefinitely after the panel has appeared.
+        # Only the sweep animates after the panel has printed.
         svg.append(
             f'<clipPath id="radar-map"><rect x="28" y="{map_y}" width="724" height="280"/></clipPath>'
-            f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{panel_begin + 0.5:.2f}s" dur="0.01s" fill="freeze"/>'
+            f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{panel_begin + 0.02:.2f}s" dur="0.01s" fill="freeze"/>'
             f'<g clip-path="url(#radar-map)" transform="rotate(0 {center_x:.0f} {center_y:.0f})">'
             f'<animateTransform attributeName="transform" type="rotate" from="0 {center_x:.0f} {center_y:.0f}" '
             f'to="360 {center_x:.0f} {center_y:.0f}" dur="5s" repeatCount="indefinite"/>'
