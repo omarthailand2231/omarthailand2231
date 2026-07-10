@@ -1,15 +1,16 @@
-# hi, i'm Omar 👋
-
-frontend dev @ **Atomtech** · building things on the side, constantly
-
-🇹🇭 bangkok · react/typescript by day, swift & java by necessity
-
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="boot.svg">
     <img src="boot-light.svg" width="681" alt="boot sequence">
   </picture>
 </p>
+
+
+# hi, i'm Omar 👋
+
+frontend dev @ **Atomtech** · building things on the side, constantly
+
+🇹🇭 bangkok · react/typescript by day, swift & java by necessity
 
 ---
 
