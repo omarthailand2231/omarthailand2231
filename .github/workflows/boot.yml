@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["scripts/generate_boot.py", "scripts/radar_bangkok.py"]
+    paths: ["scripts/generate_boot.py", "scripts/ai_message.py"]
 
 permissions:
   contents: write
@@ -21,10 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: install image support
-        run: python3 -m pip install pillow
-
       - name: generate banners
+        env:
+          BOARD_AI_KEY: ${{ secrets.BOARD_AI_KEY }}
         run: python3 scripts/generate_boot.py
 
       - name: commit if changed
