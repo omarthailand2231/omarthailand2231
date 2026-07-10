@@ -4,6 +4,9 @@ frontend dev @ **Atomtech** · building things on the side, constantly
 
 🇹🇭 bangkok · react/typescript by day, swift & java by necessity
 
+<img width="1024" height="430" alt="banner_wide_max" src="https://github.com/user-attachments/assets/688f9329-4ea5-42d3-9daf-2c1a83afa056" />
+
+
 ---
 
 ### 🔭 currently building
