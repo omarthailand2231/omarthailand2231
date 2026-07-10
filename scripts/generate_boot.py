@@ -126,18 +126,19 @@ def build_svg(p, indicator, now, filename, radar):
 
     y += LH * 2 - 10
     ready_begin = t + 0.3
+    history_begin = ready_begin + 0.8
     svg.append(
         f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{ready_begin:.2f}s" dur="0.01s" fill="freeze"/>'
         f'<text x="28" y="{y}" fill="{p["accent"]}">ready.</text>'
         f'<text x="96" y="{y}" fill="{p["dim"]}" font-size="12">last boot: {now}</text>'
-        f'<rect x="70" y="{y - 13}" width="9" height="16" fill="{p["text"]}">'
-        f'<animate attributeName="opacity" values="1;0;1" dur="1.1s" begin="{t + 0.4:.2f}s" repeatCount="indefinite"/>'
-        f'</rect></g>'
+        f'<g><set attributeName="opacity" to="0" begin="{history_begin:.2f}s" fill="freeze"/>'
+        f'<rect x="86" y="{y - 13}" width="8" height="16" fill="{p["text"]}">'
+        f'<animate attributeName="opacity" values="1;0;1" dur="0.65s" begin="{ready_begin + 0.05:.2f}s" repeatCount="1"/>'
+        f'</rect></g></g>'
     )
 
     # History navigation starts just after the ready prompt settles.  Each
     # entry occupies the same line and is replaced immediately by the next.
-    history_begin = ready_begin + 0.8
     history = [
         "$ git push",
         "$ python3 scripts/generate_boot.py",
