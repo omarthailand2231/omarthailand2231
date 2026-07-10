@@ -7,11 +7,18 @@ import math
 import urllib.request
 
 LAT, LON = 13.7563, 100.5018
-ZOOM = 8
-TILE = 256
+# Keep the visible map at zoom 8. RainViewer's 256px tiles stop at zoom 7,
+# but its 512px zoom-7 tiles share the same global-pixel scale as 256px zoom 8
+# tiles, preserving the requested close Bangkok view with actual reflectivity.
+MAP_ZOOM = 8
+BASEMAP_TILE_SIZE = 256
+RADAR_ZOOM = 7
+RADAR_TILE_SIZE = 512
 GRID_W, GRID_H = 3, 2
 PANEL_W, PANEL_H = 724, 280
-RADAR_ALPHA = 0.65
+# Slightly stronger than the basemap so actual precipitation echoes remain
+# legible in the compact terminal panel.
+RADAR_ALPHA = 0.80
 
 WEATHER_URL = (
     "https://api.open-meteo.com/v1/forecast"
@@ -19,7 +26,7 @@ WEATHER_URL = (
     "&current=temperature_2m,precipitation,weather_code,wind_speed_10m"
 )
 RAINVIEWER_URL = "https://api.rainviewer.com/public/weather-maps.json"
-RADAR_TILE = "https://tilecache.rainviewer.com{path}/256/{z}/{x}/{y}/2/1_1.png"
+RADAR_TILE = "https://tilecache.rainviewer.com{path}/{size}/{z}/{x}/{y}/2/1_1.png"
 BASEMAP_TILE = "https://basemaps.cartocdn.com/{style}/{z}/{x}/{y}.png"
 
 WMO_CODES = {
@@ -42,33 +49,42 @@ def _get(url, binary=False):
         return r.read() if binary else json.load(r)
 
 
-def _grid_origin():
+def _grid_origin(zoom, tile_size):
     """Top-left tile of the 3x2 grid and the panel crop offset inside it."""
-    n = 2 ** ZOOM
+    n = 2 ** zoom
     xf = (LON + 180.0) / 360.0 * n
     yf = (1.0 - math.asinh(math.tan(math.radians(LAT))) / math.pi) / 2.0 * n
-    px, py = xf * TILE, yf * TILE
-    x0 = int((px - PANEL_W / 2) // TILE)
-    y0 = int((py - PANEL_H / 2) // TILE)
-    return x0, y0, int(px - PANEL_W / 2) - x0 * TILE, int(py - PANEL_H / 2) - y0 * TILE
+    px, py = xf * tile_size, yf * tile_size
+    x0 = int((px - PANEL_W / 2) // tile_size)
+    y0 = int((py - PANEL_H / 2) // tile_size)
+    return x0, y0, int(px - PANEL_W / 2) - x0 * tile_size, int(py - PANEL_H / 2) - y0 * tile_size
 
 
-def _stitch(url_for):
+def _stitch(url_for, zoom, tile_size):
     from PIL import Image
-    x0, y0, _, _ = _grid_origin()
-    grid = Image.new("RGBA", (GRID_W * TILE, GRID_H * TILE))
+    x0, y0, _, _ = _grid_origin(zoom, tile_size)
+    grid = Image.new("RGBA", (GRID_W * tile_size, GRID_H * tile_size))
     for dx in range(GRID_W):
         for dy in range(GRID_H):
             raw = _get(url_for(x0 + dx, y0 + dy), binary=True)
-            grid.paste(Image.open(io.BytesIO(raw)).convert("RGBA"), (dx * TILE, dy * TILE))
+            grid.paste(Image.open(io.BytesIO(raw)).convert("RGBA"), (dx * tile_size, dy * tile_size))
     return grid
 
 
-def _compose(style, radar_grid):
-    base = _stitch(lambda x, y: BASEMAP_TILE.format(style=style, z=ZOOM, x=x, y=y))
-    base.alpha_composite(radar_grid)
-    _, _, left, top = _grid_origin()
-    crop = base.crop((left, top, left + PANEL_W, top + PANEL_H)).convert("RGB")
+def _panel_crop(grid, zoom, tile_size):
+    _, _, left, top = _grid_origin(zoom, tile_size)
+    return grid.crop((left, top, left + PANEL_W, top + PANEL_H))
+
+
+def _compose(style, radar_panel):
+    base_grid = _stitch(
+        lambda x, y: BASEMAP_TILE.format(style=style, z=MAP_ZOOM, x=x, y=y),
+        MAP_ZOOM,
+        BASEMAP_TILE_SIZE,
+    )
+    base = _panel_crop(base_grid, MAP_ZOOM, BASEMAP_TILE_SIZE)
+    base.alpha_composite(radar_panel)
+    crop = base.convert("RGB")
     buf = io.BytesIO()
     crop.save(buf, "JPEG", quality=80)
     return base64.b64encode(buf.getvalue()).decode("ascii")
@@ -79,15 +95,22 @@ def fetch_radar():
     try:
         cur = _get(WEATHER_URL)["current"]
         path = _get(RAINVIEWER_URL)["radar"]["past"][-1]["path"]
-        radar_grid = _stitch(lambda x, y: RADAR_TILE.format(path=path, z=ZOOM, x=x, y=y))
-        radar_grid.putalpha(radar_grid.getchannel("A").point(lambda v: int(v * RADAR_ALPHA)))
+        radar_grid = _stitch(
+            lambda x, y: RADAR_TILE.format(
+                path=path, size=RADAR_TILE_SIZE, z=RADAR_ZOOM, x=x, y=y
+            ),
+            RADAR_ZOOM,
+            RADAR_TILE_SIZE,
+        )
+        radar_panel = _panel_crop(radar_grid, RADAR_ZOOM, RADAR_TILE_SIZE)
+        radar_panel.putalpha(radar_panel.getchannel("A").point(lambda v: int(v * RADAR_ALPHA)))
         return {
             "temp_c": float(cur["temperature_2m"]),
             "precip_mm": float(cur["precipitation"]),
             "wind_kmh": float(cur["wind_speed_10m"]),
             "condition": WMO_CODES.get(int(cur["weather_code"]), "unknown"),
-            "map_dark_b64": _compose("dark_all", radar_grid),
-            "map_light_b64": _compose("light_all", radar_grid),
+            "map_dark_b64": _compose("dark_all", radar_panel),
+            "map_light_b64": _compose("light_all", radar_panel),
         }
     except Exception:
         return None

@@ -177,7 +177,6 @@ def build_svg(p, indicator, now, filename, radar):
             f'wind {radar["wind_kmh"]:.0f} km/h · {radar["condition"]}'
         )
         map_y = panel_y + 36
-        center_x, center_y = 28 + 724 / 2, map_y + 280 / 2
         svg.append(
             f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{panel_begin:.2f}s" dur="0.01s" fill="freeze"/>'
             f'<rect x="28" y="{panel_y}" width="724" height="{panel_h}" rx="4" fill="{p["bg"]}" stroke="{p["border"]}"/>'
@@ -188,20 +187,6 @@ def build_svg(p, indicator, now, filename, radar):
             f'font-size="9" opacity="0.78">© OSM © CARTO</text>'
             f'<text x="42" y="{panel_y + 338}" fill="{p["text"]}">{stats}</text>'
             f'</g>'
-        )
-
-        # Only the sweep animates after the panel has printed.
-        svg.append(
-            f'<clipPath id="radar-map"><rect x="28" y="{map_y}" width="724" height="280"/></clipPath>'
-            f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{panel_begin + 0.02:.2f}s" dur="0.01s" fill="freeze"/>'
-            f'<g clip-path="url(#radar-map)" transform="rotate(0 {center_x:.0f} {center_y:.0f})">'
-            f'<animateTransform attributeName="transform" type="rotate" from="0 {center_x:.0f} {center_y:.0f}" '
-            f'to="360 {center_x:.0f} {center_y:.0f}" dur="5s" repeatCount="indefinite"/>'
-            f'<path d="M {center_x:.0f} {center_y:.0f} L {center_x + 350:.0f} {center_y - 58:.0f} '
-            f'A 355 355 0 0 1 {center_x + 355:.0f} {center_y:.0f} Z" fill="{p["accent"]}" opacity="0.08"/>'
-            f'<line x1="{center_x:.0f}" y1="{center_y:.0f}" x2="{center_x + 362:.0f}" y2="{center_y:.0f}" '
-            f'stroke="{p["accent"]}" stroke-width="1.5" opacity="0.55"/>'
-            f'</g></g>'
         )
     svg.append("</svg>")
     with open(filename, "w") as f:
