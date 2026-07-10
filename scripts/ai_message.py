@@ -102,7 +102,7 @@ def _call_api(api_key, user_prompt):
         {
             "model": MODEL,
             "temperature": 1.0,
-            "max_tokens": 140,
+            "max_tokens": 700,
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
@@ -115,6 +115,7 @@ def _call_api(api_key, user_prompt):
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
+            "User-Agent": "omar-boot-banner",
         },
         method="POST",
     )

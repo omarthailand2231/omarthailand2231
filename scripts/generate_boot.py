@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """Generates boot.svg (dark) + boot-light.svg — a 24x7 split-flap board.
 
+Styled after ui.aceternity.com's "Text Flipping Board": tall rounded cells,
+a hinge split-line with corner pins, and occasional colored flash tiles
+during the scramble (a Vestaboard-style easter egg). Unlike that component
+(React + Framer Motion, live/interactive), this is a static SVG generated
+at build time — the "flip" is approximated with a scaleY squish/unsquish
+via SMIL, with the character swap hidden at the squished instant.
+
 The AI (scripts/ai_message.py) has full creative range over all 7 rows —
 a quip, a list, a status readout, whatever fits — falling back to a static
 message if the API is unavailable. Claude status and local time are fed to
 the AI as context only; they are not displayed as their own dedicated rows.
-Every one of the 168 character cells scrambles through random glyphs before
-landing on its final character (or blank), like a real Solari departure
-board powering on.
 """
 import random
 from datetime import datetime, timedelta, timezone
@@ -15,17 +19,27 @@ from datetime import datetime, timedelta, timezone
 import ai_message
 
 DARK = {
-    "bg": "#0d1117", "panel": "#161b22", "border": "#30363d",
-    "flap_hi": "#232a34", "flap_lo": "#12161c", "flap_text": "#f0f3f7",
-    "hinge": "#05070a", "idle": "#333c48",
+    "bg": "#0d1117", "board_bg": "#171717", "cell_bg": "#171717",
+    "border": "#000000", "split": "#000000", "flap_text": "#ffffff",
     "dim": "#8b949e",
 }
 LIGHT = {
-    "bg": "#f6f8fa", "panel": "#ffffff", "border": "#d0d7de",
-    "flap_hi": "#f3f4f6", "flap_lo": "#dfe2e6", "flap_text": "#1f2328",
-    "hinge": "#b8bfc7", "idle": "#c3c9d1",
+    "bg": "#f6f8fa", "board_bg": "#f5f5f5", "cell_bg": "#e5e5e5",
+    "border": "#d4d4d4", "split": "#a3a3a3", "flap_text": "#262626",
     "dim": "#59636e",
 }
+
+# Vestaboard-style accent tiles that occasionally flash mid-scramble.
+ACCENTS = [
+    ("#dc2626", "#ffffff"),
+    ("#ea580c", "#ffffff"),
+    ("#eab308", "#171717"),
+    ("#16a34a", "#ffffff"),
+    ("#2563eb", "#ffffff"),
+    ("#7c3aed", "#ffffff"),
+    ("#f5f5f5", "#171717"),
+]
+FLASH_CHANCE = 0.15
 
 STATUS_TEXT = {
     "none": "operational",
@@ -39,15 +53,17 @@ FALLBACK_LINES = ["STILL SHIPPING", "STILL DEBUGGING"]
 
 COLS = 24
 ROWS = 7
-CELL_W, CELL_H, GAP = 24, 34, 3
-PAD = 20
-CAPTION_H = 30
-FONT_SIZE = 20
+CELL_W, CELL_H, GAP = 24, 46, 3
+CELL_RX = 4
+PAD = 18
+CAPTION_H = 28
+FONT_SIZE = 19
 
 SCRAMBLE_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-FLIP_DUR = 0.055  # seconds per scramble step
+FLIP_DUR = 0.1  # seconds per flip step
+FLIP_SQUISH_FRAC = 0.4  # fraction into each step where the cell is edge-on
 # Rows power on top-to-bottom, like a real board waking up.
-ROW_START = [0.15 + i * 0.32 for i in range(ROWS)]
+ROW_START = [0.15 + i * 0.3 for i in range(ROWS)]
 
 
 def fetch_claude_status():
@@ -70,39 +86,76 @@ def fetch_claude_status():
 
 
 def _flap_cell(p, x, y, target_char, delay):
-    """One mechanical split-flap cell: scrambles through random glyphs and
-    lands on target_char, or sits idle (a faint hinge pill) if it's blank."""
-    parts = [
-        f'<rect x="{x}" y="{y}" width="{CELL_W}" height="{CELL_H}" rx="2.5" fill="{p["flap_lo"]}"/>',
-        f'<rect x="{x}" y="{y}" width="{CELL_W}" height="{CELL_H / 2}" rx="2.5" fill="{p["flap_hi"]}"/>',
-        f'<rect x="{x}" y="{y + CELL_H / 2 - 3}" width="{CELL_W}" height="3" fill="{p["flap_lo"]}"/>',
-        f'<line x1="{x}" y1="{y + CELL_H / 2}" x2="{x + CELL_W}" y2="{y + CELL_H / 2}" '
-        f'stroke="{p["hinge"]}" stroke-width="1.2"/>',
+    """One split-flap cell: flips through a short scramble and lands on
+    target_char (or blank), with an occasional colored flash mid-scramble."""
+    n = random.randint(4, 7)  # total glyphs shown, ending on target_char
+    seq = [random.choice(SCRAMBLE_POOL) for _ in range(n - 1)] + [target_char]
+    accents = [
+        random.choice(ACCENTS) if (i < n - 1 and random.random() < FLASH_CHANCE) else None
+        for i in range(n)
     ]
 
-    tx, ty = x + CELL_W / 2, y + CELL_H / 2 + FONT_SIZE * 0.35
-    if target_char == " ":
-        parts.append(
-            f'<ellipse cx="{tx}" cy="{y + CELL_H / 2}" rx="{CELL_W * 0.18:.1f}" ry="2" fill="{p["idle"]}"/>'
-        )
+    cx, cy = x + CELL_W / 2, y + CELL_H / 2
+    total_dur = n * FLIP_DUR
 
-    n_flips = random.randint(4, 8)
-    seq = [random.choice(SCRAMBLE_POOL) for _ in range(n_flips)] + [target_char]
-    t = delay
+    def reveal_t(i):
+        return delay + i * FLIP_DUR + FLIP_SQUISH_FRAC * FLIP_DUR
+
+    # Cell body: rounded rect, fill flashes to an accent color and back
+    # exactly when the corresponding glyph is revealed.
+    bg_anims = []
+    for i in range(1, n):
+        if accents[i] is not None or accents[i - 1] is not None:
+            col = accents[i][0] if accents[i] else p["cell_bg"]
+            bg_anims.append(
+                f'<animate attributeName="fill" to="{col}" begin="{reveal_t(i):.3f}s" dur="0.001s" fill="freeze"/>'
+            )
+    fill0 = accents[0][0] if accents[0] else p["cell_bg"]
+    parts = [
+        f'<rect x="{x}" y="{y}" width="{CELL_W}" height="{CELL_H}" rx="{CELL_RX}" ry="{CELL_RX}" '
+        f'fill="{fill0}" stroke="{p["border"]}" stroke-width="1.2">{"".join(bg_anims)}</rect>',
+        f'<line x1="{x}" y1="{cy}" x2="{x + CELL_W}" y2="{cy}" stroke="{p["split"]}" stroke-width="1" stroke-opacity="0.5"/>',
+        f'<rect x="{x - 0.5}" y="{cy - CELL_H * 0.15}" width="1.5" height="{CELL_H * 0.3}" rx="0.75" fill="{p["border"]}"/>',
+        f'<rect x="{x + CELL_W - 1}" y="{cy - CELL_H * 0.15}" width="1.5" height="{CELL_H * 0.3}" rx="0.75" fill="{p["border"]}"/>',
+    ]
+
+    # Glyphs: stacked text elements, each visible only for its own window,
+    # swapped exactly at the flip's squished (near-invisible) instant.
+    glyph_parts = []
     for i, ch in enumerate(seq):
-        is_last = i == len(seq) - 1
+        is_last = i == n - 1
         glyph = ch if ch != " " else ""
-        anim = f'<animate attributeName="opacity" from="0" to="1" begin="{t:.3f}s" dur="0.001s" fill="freeze"/>'
+        color = accents[i][1] if accents[i] else p["flap_text"]
+        anim = f'<animate attributeName="opacity" from="0" to="1" begin="{reveal_t(i):.3f}s" dur="0.001s" fill="freeze"/>'
         if not is_last:
             anim += (
                 f'<animate attributeName="opacity" from="1" to="0" '
-                f'begin="{t + FLIP_DUR:.3f}s" dur="0.001s" fill="freeze"/>'
+                f'begin="{reveal_t(i + 1):.3f}s" dur="0.001s" fill="freeze"/>'
             )
-        parts.append(
-            f'<text x="{tx}" y="{ty}" text-anchor="middle" font-weight="600" '
-            f'fill="{p["flap_text"]}" opacity="0">{glyph}{anim}</text>'
+        glyph_parts.append(
+            f'<text x="{cx}" y="{cy + FONT_SIZE * 0.35}" text-anchor="middle" font-weight="700" '
+            f'fill="{color}" opacity="0">{glyph}{anim}</text>'
         )
-        t += FLIP_DUR
+
+    # A continuous scaleY squish/unsquish around the cell's vertical center
+    # approximates the mechanical flip; the glyph swap above is timed to
+    # land exactly at each squish bottom, where the cell face is edge-on.
+    kt, sv = [0.0], [1]
+    for i in range(n):
+        kt.append(i * FLIP_DUR + FLIP_SQUISH_FRAC * FLIP_DUR)
+        sv.append(0.05)
+        kt.append((i + 1) * FLIP_DUR)
+        sv.append(1)
+    key_times = ";".join(f"{t / total_dur:.4f}" for t in kt)
+    values = ";".join(f"1,{v}" for v in sv)
+
+    parts.append(
+        f'<g transform="translate({cx},{cy})"><g>'
+        f'<animateTransform attributeName="transform" type="scale" '
+        f'keyTimes="{key_times}" values="{values}" begin="{delay:.3f}s" dur="{total_dur:.3f}s" fill="freeze"/>'
+        f'<g transform="translate({-cx},{-cy})">{"".join(glyph_parts)}</g>'
+        f'</g></g>'
+    )
     return "".join(parts)
 
 
@@ -116,9 +169,9 @@ def build_svg(p, lines, now, filename):
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" '
         f'width="{W}" height="{H}" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" '
         f'font-size="{FONT_SIZE}">',
-        f'<rect width="{W}" height="{H}" rx="10" fill="{p["bg"]}"/>',
-        f'<rect x="{PAD - 6}" y="{PAD - 6}" width="{board_w + 12}" height="{board_h + 12}" '
-        f'rx="6" fill="{p["panel"]}" stroke="{p["border"]}"/>',
+        f'<rect width="{W}" height="{H}" rx="14" fill="{p["bg"]}"/>',
+        f'<rect x="{PAD - 8}" y="{PAD - 8}" width="{board_w + 16}" height="{board_h + 16}" '
+        f'rx="12" fill="{p["board_bg"]}"/>',
     ]
 
     for row in range(ROWS):
@@ -126,10 +179,10 @@ def build_svg(p, lines, now, filename):
         y = PAD + row * (CELL_H + GAP)
         for col, ch in enumerate(text):
             x = PAD + col * (CELL_W + GAP)
-            cell_delay = ROW_START[row] + col * 0.015 + random.uniform(0, 0.12)
+            cell_delay = ROW_START[row] + col * 0.014 + random.uniform(0, 0.1)
             svg.append(_flap_cell(p, x, y, ch, cell_delay))
 
-    caption_y = PAD + board_h + 22
+    caption_y = PAD + board_h + 20
     svg.append(
         f'<text x="{PAD}" y="{caption_y}" fill="{p["dim"]}" font-size="12">last refresh: {now}</text>'
     )
