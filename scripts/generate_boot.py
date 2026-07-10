@@ -47,21 +47,22 @@ def build_svg(p, indicator, now, filename):
     tag, ck, status_text, mood = STATUS_MAP[indicator]
     scolor = p[ck]
 
+    # (tag, tag_color, label, detail, detail_color, type_dur, pause_after)
     lines = [
-        ("OK", p["green"], "mounting /projects", "", p["dim"]),
-        ("OK", p["green"], "react runtime", "attached", p["dim"]),
-        ("OK", p["green"], "swift toolchain", "loaded", p["dim"]),
-        ("OK", p["green"], "sol.agent", "panic-stop armed", p["dim"]),
-        ("OK", p["green"], "blood_ai", "13k lines, refactoring", p["dim"]),
-        ("OK", p["green"], "sumo.bot", "listening on 127.0.0.1:67", p["dim"]),
-        ("OK", p["green"], "atom.cat", "roaming somewhere", p["dim"]),
-        (tag, scolor, "claude api", status_text, scolor),
-        ("OK", p["green"], "omar.mood", mood, p["dim"]),
+        ("OK", p["green"], "mounting /projects", "", p["dim"], 0.15, 0.0),
+        ("OK", p["green"], "react runtime", "attached", p["dim"], 0.2, 0.05),
+        ("OK", p["green"], "swift toolchain", "loaded", p["dim"], 0.25, 0.9),
+        ("OK", p["green"], "sol.agent", "panic-stop armed", p["dim"], 0.3, 0.15),
+        ("OK", p["green"], "blood_ai", "13k lines, refactoring", p["dim"], 0.35, 0.4),
+        ("OK", p["green"], "sumo.bot", "listening on 127.0.0.1:67", p["dim"], 0.2, 0.1),
+        ("OK", p["green"], "atom.cat", "roaming somewhere", p["dim"], 0.15, 0.05),
+        (tag, scolor, "claude api", status_text, scolor, 0.3, 0.1),
+        ("OK", p["green"], "omar.mood", mood, p["dim"], 0.15, 0.0),
     ]
+    STALL = 1.4  # network wait before the claude api line
 
     W, LH, PAD_TOP = 780, 26, 64
     H = PAD_TOP + (len(lines) + 2) * LH + 24
-    per_line = 0.55
     t = 0.9
 
     svg = [
@@ -82,11 +83,23 @@ def build_svg(p, indicator, now, filename):
         f'<text x="28" y="{y}" fill="{p["accent"]}">$ boot omar.sys --verbose</text></g>'
     )
 
-    for i, (tg, tc, label, detail, dc) in enumerate(lines):
+    for i, (tg, tc, label, detail, dc, type_dur, pause_after) in enumerate(lines):
         y += LH
+        if label == "claude api":
+            # progress dots during the stall, hidden the instant the wipe starts
+            wait = [f'<g fill="{p["dim"]}">']
+            for d in range(3):
+                wait.append(
+                    f'<text x="{28 + d * 12}" y="{y}" opacity="0">.'
+                    f'<animate attributeName="opacity" to="1" begin="{t + 0.3 + d * 0.35:.2f}s" dur="0.01s" fill="freeze"/>'
+                    f'</text>'
+                )
+            wait.append(f'<animate attributeName="opacity" to="0" begin="{t + STALL:.2f}s" dur="0.01s" fill="freeze"/></g>')
+            svg.append("".join(wait))
+            t += STALL
         cid = f"c{i}"
         svg.append(f'<clipPath id="{cid}"><rect x="0" y="{y - 18}" width="0" height="24">'
-                   f'<animate attributeName="width" from="0" to="{W}" begin="{t:.2f}s" dur="{per_line}s" fill="freeze"/>'
+                   f'<animate attributeName="width" from="0" to="{W}" begin="{t:.2f}s" dur="{type_dur}s" fill="freeze"/>'
                    f'</rect></clipPath>')
         dots = "." * max(2, 28 - len(label))
         detail_part = f' <tspan fill="{dc}">{detail}</tspan>' if detail else ""
@@ -95,7 +108,7 @@ def build_svg(p, indicator, now, filename):
             f'<text x="28" y="{y}" fill="{p["text"]}">[ <tspan fill="{tc}">{tg}</tspan> ] '
             f'{label} <tspan fill="{p["dots"]}">{dots}</tspan>{detail_part}</text></g>'
         )
-        t += per_line
+        t += type_dur + pause_after
 
     y += LH * 2 - 10
     svg.append(
