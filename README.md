@@ -4,8 +4,10 @@ frontend dev @ **Atomtech** · building things on the side, constantly
 
 🇹🇭 bangkok · react/typescript by day, swift & java by necessity
 
-<img width="1024" height="430" alt="banner_fixed_heavy" src="https://github.com/user-attachments/assets/d8d47111-106b-4144-839f-effbd27644dc" />
-
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/6b8ab045-48f6-4fc4-8095-b48607a95755">
+  <img src="https://github.com/user-attachments/assets/8ca4a52c-fe86-4e67-a1ea-edb48d2bcdc9" width="100%" alt="">
+</picture>
 
 ---
 
@@ -26,8 +28,8 @@ frontend dev @ **Atomtech** · building things on the side, constantly
 
 ### 📊 stats
 
-![stats](https://github-readme-stats.vercel.app/api?username=YOUR_USERNAME&show_icons=true&theme=tokyonight&hide_border=true)
-![langs](https://github-readme-stats.vercel.app/api/top-langs/?username=YOUR_USERNAME&layout=compact&theme=tokyonight&hide_border=true)
+![stats](https://github-readme-stats.vercel.app/api?username=omarthailand2231&show_icons=true&theme=tokyonight&hide_border=true)
+![langs](https://github-readme-stats.vercel.app/api/top-langs/?username=omarthailand2231&layout=compact&theme=tokyonight&hide_border=true)
 
 ---
 
