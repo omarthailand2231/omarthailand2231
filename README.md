@@ -11,6 +11,8 @@ frontend dev @ **Atomtech** · building things on the side, constantly
   </picture>
 </p>
 
+---
+
 ### 🔭 currently building
 
 - **Sol** — a macOS menubar AI agent with screen awareness and a panic-stop button. swift + local LLM brain.
