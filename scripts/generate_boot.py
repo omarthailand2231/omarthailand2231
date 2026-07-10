@@ -5,8 +5,8 @@ Styled after ui.aceternity.com's "Text Flipping Board": tall rounded cells,
 a hinge split-line with corner pins, and occasional colored flash tiles
 during the scramble (a Vestaboard-style easter egg). Unlike that component
 (React + Framer Motion, live/interactive), this is a static SVG generated
-at build time — the "flip" is approximated with a scaleY squish/unsquish
-via SMIL, with the character swap hidden at the squished instant.
+at build time — the "flip" is approximated with independently squished,
+staggered top and bottom character halves via SMIL.
 
 The AI (scripts/ai_message.py) has full creative range over all 7 rows —
 a quip, a list, a status readout, whatever fits — falling back to a static
@@ -60,6 +60,7 @@ FONT_SIZE = 19
 SCRAMBLE_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 FLIP_DUR = 0.1  # seconds per flip step
 FLIP_SQUISH_FRAC = 0.4  # fraction into each step where the cell is edge-on
+HALF_FLIP_OFFSET = 0.045  # the top flap lands just before the bottom flap
 # Rows power on top-to-bottom, like a real board waking up.
 ROW_START = [0.15 + i * 0.3 for i in range(ROWS)]
 
@@ -84,8 +85,7 @@ def fetch_claude_status():
 
 
 def _flap_cell(p, x, y, target_char, delay):
-    """One split-flap cell: flips through a short scramble and lands on
-    target_char (or blank), with an occasional colored flash mid-scramble."""
+    """One split-flap cell with independently animated top and bottom glyphs."""
     n = random.randint(4, 7)  # total glyphs shown, ending on target_char
     seq = [random.choice(SCRAMBLE_POOL) for _ in range(n - 1)] + [target_char]
     accents = [
@@ -96,8 +96,8 @@ def _flap_cell(p, x, y, target_char, delay):
     cx, cy = x + CELL_W / 2, y + CELL_H / 2
     total_dur = n * FLIP_DUR
 
-    def reveal_t(i):
-        return delay + i * FLIP_DUR + FLIP_SQUISH_FRAC * FLIP_DUR
+    def reveal_t(i, half_offset=0.0):
+        return delay + i * FLIP_DUR + FLIP_SQUISH_FRAC * FLIP_DUR + half_offset
 
     # Cell body: rounded rect, fill flashes to an accent color and back
     # exactly when the corresponding glyph is revealed.
@@ -109,35 +109,46 @@ def _flap_cell(p, x, y, target_char, delay):
                 f'<animate attributeName="fill" to="{col}" begin="{reveal_t(i):.3f}s" dur="0.001s" fill="freeze"/>'
             )
     fill0 = accents[0][0] if accents[0] else p["cell_bg"]
+    cell_id = f"{int(x)}-{int(y)}"
+    top_clip = f"flap-top-{cell_id}"
+    bottom_clip = f"flap-bottom-{cell_id}"
     parts = [
         f'<rect x="{x}" y="{y}" width="{CELL_W}" height="{CELL_H}" rx="{CELL_RX}" ry="{CELL_RX}" '
         f'fill="{fill0}" stroke="{p["border"]}" stroke-width="1.2">{"".join(bg_anims)}</rect>',
-        f'<line x1="{x}" y1="{cy}" x2="{x + CELL_W}" y2="{cy}" stroke="{p["split"]}" stroke-width="1" stroke-opacity="0.5"/>',
-        f'<rect x="{x - 0.5}" y="{cy - CELL_H * 0.15}" width="1.5" height="{CELL_H * 0.3}" rx="0.75" fill="{p["border"]}"/>',
-        f'<rect x="{x + CELL_W - 1}" y="{cy - CELL_H * 0.15}" width="1.5" height="{CELL_H * 0.3}" rx="0.75" fill="{p["border"]}"/>',
+        f'<defs>'
+        f'<clipPath id="{top_clip}" clipPathUnits="userSpaceOnUse">'
+        f'<rect x="{x}" y="{y}" width="{CELL_W}" height="{CELL_H / 2}"/>'
+        f'</clipPath>'
+        f'<clipPath id="{bottom_clip}" clipPathUnits="userSpaceOnUse">'
+        f'<rect x="{x}" y="{cy}" width="{CELL_W}" height="{CELL_H / 2}"/>'
+        f'</clipPath>'
+        f'</defs>',
     ]
 
-    # Glyphs: stacked text elements, each visible only for its own window,
-    # swapped exactly at the flip's squished (near-invisible) instant.
-    glyph_parts = []
-    for i, ch in enumerate(seq):
-        is_last = i == n - 1
-        glyph = ch if ch != " " else ""
-        color = accents[i][1] if accents[i] else p["flap_text"]
-        anim = f'<animate attributeName="opacity" from="0" to="1" begin="{reveal_t(i):.3f}s" dur="0.001s" fill="freeze"/>'
-        if not is_last:
-            anim += (
-                f'<animate attributeName="opacity" from="1" to="0" '
-                f'begin="{reveal_t(i + 1):.3f}s" dur="0.001s" fill="freeze"/>'
+    def glyph_half(half_offset):
+        """Render a clipped half-character sequence with a staggered reveal."""
+        glyph_parts = []
+        for i, ch in enumerate(seq):
+            is_last = i == n - 1
+            glyph = ch if ch != " " else ""
+            color = accents[i][1] if accents[i] else p["flap_text"]
+            anim = (
+                f'<animate attributeName="opacity" from="0" to="1" '
+                f'begin="{reveal_t(i, half_offset):.3f}s" dur="0.001s" fill="freeze"/>'
             )
-        glyph_parts.append(
-            f'<text x="{cx}" y="{cy + FONT_SIZE * 0.35}" text-anchor="middle" font-weight="700" '
-            f'fill="{color}" opacity="0">{glyph}{anim}</text>'
-        )
+            if not is_last:
+                anim += (
+                    f'<animate attributeName="opacity" from="1" to="0" '
+                    f'begin="{reveal_t(i + 1, half_offset):.3f}s" dur="0.001s" fill="freeze"/>'
+                )
+            glyph_parts.append(
+                f'<text x="{cx}" y="{cy + FONT_SIZE * 0.35}" text-anchor="middle" font-weight="700" '
+                f'fill="{color}" opacity="0">{glyph}{anim}</text>'
+            )
+        return "".join(glyph_parts)
 
-    # A continuous scaleY squish/unsquish around the cell's vertical center
-    # approximates the mechanical flip; the glyph swap above is timed to
-    # land exactly at each squish bottom, where the cell face is edge-on.
+    # Each half squishes around the seam independently. The small offset makes
+    # the board briefly show different top/bottom halves while a flap turns.
     kt, sv = [0.0], [1]
     for i in range(n):
         kt.append(i * FLIP_DUR + FLIP_SQUISH_FRAC * FLIP_DUR)
@@ -147,13 +158,25 @@ def _flap_cell(p, x, y, target_char, delay):
     key_times = ";".join(f"{t / total_dur:.4f}" for t in kt)
     values = ";".join(f"1,{v}" for v in sv)
 
-    parts.append(
-        f'<g transform="translate({cx},{cy})"><g>'
-        f'<animateTransform attributeName="transform" type="scale" '
-        f'keyTimes="{key_times}" values="{values}" begin="{delay:.3f}s" dur="{total_dur:.3f}s" fill="freeze"/>'
-        f'<g transform="translate({-cx},{-cy})">{"".join(glyph_parts)}</g>'
-        f'</g></g>'
-    )
+    def flip_half(clip_id, glyphs, half_offset):
+        return (
+            f'<g transform="translate({cx},{cy})"><g>'
+            f'<animateTransform attributeName="transform" type="scale" '
+            f'keyTimes="{key_times}" values="{values}" begin="{delay + half_offset:.3f}s" '
+            f'dur="{total_dur:.3f}s" fill="freeze"/>'
+            f'<g transform="translate({-cx},{-cy})" clip-path="url(#{clip_id})">{glyphs}</g>'
+            f'</g></g>'
+        )
+
+    parts.extend([
+        flip_half(top_clip, glyph_half(0), 0),
+        flip_half(bottom_clip, glyph_half(HALF_FLIP_OFFSET), HALF_FLIP_OFFSET),
+        # The seam and hinge pins are appended after the glyphs, keeping them
+        # visibly above the character just like a physical split-flap board.
+        f'<line x1="{x}" y1="{cy}" x2="{x + CELL_W}" y2="{cy}" stroke="{p["split"]}" stroke-width="1.25" stroke-opacity="0.8"/>',
+        f'<rect x="{x - 0.5}" y="{cy - CELL_H * 0.15}" width="1.5" height="{CELL_H * 0.3}" rx="0.75" fill="{p["border"]}"/>',
+        f'<rect x="{x + CELL_W - 1}" y="{cy - CELL_H * 0.15}" width="1.5" height="{CELL_H * 0.3}" rx="0.75" fill="{p["border"]}"/>',
+    ])
     return "".join(parts)
 
 
