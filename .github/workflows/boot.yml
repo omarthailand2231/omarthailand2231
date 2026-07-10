@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["scripts/generate_boot.py"]
+    paths: ["scripts/generate_boot.py", "scripts/radar_bangkok.py"]
 
 permissions:
   contents: write
@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: install image support
+        run: pip install pillow
 
       - name: generate banners
         run: python3 scripts/generate_boot.py

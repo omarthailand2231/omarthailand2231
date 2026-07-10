@@ -4,6 +4,8 @@ import json
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
+import radar_bangkok
+
 STATUS_URL = "https://status.claude.com/api/v2/status.json"
 
 DARK = {
@@ -43,7 +45,7 @@ STATUS_MAP = {
 }
 
 
-def build_svg(p, indicator, now, filename):
+def build_svg(p, indicator, now, filename, radar):
     tag, ck, status_text, mood = STATUS_MAP[indicator]
     scolor = p[ck]
 
@@ -62,7 +64,13 @@ def build_svg(p, indicator, now, filename):
     STALL = 1.4  # network wait before the claude api line
 
     W, LH, PAD_TOP = 780, 26, 64
-    H = PAD_TOP + (len(lines) + 2) * LH + 24
+    # The post-boot prompt and its radar panel are intentionally part of the
+    # terminal, rather than a separate card below it.
+    ready_y = PAD_TOP + len(lines) * LH + 2 * LH - 10
+    prompt_y = ready_y + LH + 4
+    panel_y = prompt_y + 20
+    panel_h = 356
+    H = panel_y + panel_h + 30
     t = 0.9
 
     svg = [
@@ -111,14 +119,88 @@ def build_svg(p, indicator, now, filename):
         t += type_dur + pause_after
 
     y += LH * 2 - 10
+    ready_begin = t + 0.3
     svg.append(
-        f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{t + 0.3:.2f}s" dur="0.01s" fill="freeze"/>'
+        f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{ready_begin:.2f}s" dur="0.01s" fill="freeze"/>'
         f'<text x="28" y="{y}" fill="{p["accent"]}">ready.</text>'
         f'<text x="96" y="{y}" fill="{p["dim"]}" font-size="12">last boot: {now}</text>'
         f'<rect x="70" y="{y - 13}" width="9" height="16" fill="{p["text"]}">'
         f'<animate attributeName="opacity" values="1;0;1" dur="1.1s" begin="{t + 0.4:.2f}s" repeatCount="indefinite"/>'
         f'</rect></g>'
     )
+
+    # History navigation starts just after the ready prompt settles.  Each
+    # entry occupies the same line and is replaced immediately by the next.
+    history_begin = ready_begin + 0.8
+    history = [
+        "$ git push",
+        "$ python3 scripts/generate_boot.py",
+        "$ vim sol/PanicStop.swift",
+        "$ python3 scripts/generate_boot.py",
+    ]
+    for i, command in enumerate(history):
+        svg.append(
+            f'<text x="28" y="{prompt_y}" fill="{p["text"]}" opacity="0">{command}'
+            f'<animate attributeName="opacity" values="0;1;1;0" '
+            f'keyTimes="0;0.01;0.99;1" begin="{history_begin + i * 0.45:.2f}s" '
+            f'dur="0.45s" fill="freeze"/></text>'
+        )
+
+    type_begin = history_begin + len(history) * 0.45 + 0.12
+    command_clip = "radar-command"
+    svg.append(
+        f'<clipPath id="{command_clip}"><rect x="28" y="{prompt_y - 18}" width="0" height="24">'
+        f'<animate attributeName="width" from="0" to="300" begin="{type_begin:.2f}s" dur="0.7s" fill="freeze"/>'
+        f'</rect></clipPath>'
+        f'<g clip-path="url(#{command_clip})"><text x="28" y="{prompt_y}" fill="{p["accent"]}">$ python3 radar_bangkok.py</text></g>'
+    )
+
+    panel_begin = type_begin + 0.7 + 0.4
+    panel_clip = "radar-panel"
+    if radar is None:
+        svg.append(
+            f'<clipPath id="{panel_clip}"><rect x="28" y="{panel_y - 18}" width="0" height="24">'
+            f'<animate attributeName="width" from="0" to="724" begin="{panel_begin:.2f}s" dur="0.5s" fill="freeze"/>'
+            f'</rect></clipPath>'
+            f'<g clip-path="url(#{panel_clip})"><text x="28" y="{panel_y}" fill="{p["red"]}">[ FAIL ] radar_bangkok.py ... no signal</text></g>'
+        )
+    else:
+        map_b64 = radar["map_dark_b64"] if p is DARK else radar["map_light_b64"]
+        stats = (
+            f'{radar["temp_c"]:.1f}°C · rain {radar["precip_mm"]:.1f}mm · '
+            f'wind {radar["wind_kmh"]:.0f} km/h · {radar["condition"]}'
+        )
+        map_y = panel_y + 36
+        center_x, center_y = 28 + 724 / 2, map_y + 280 / 2
+        svg.append(
+            f'<clipPath id="{panel_clip}"><rect x="28" y="{panel_y}" width="0" height="{panel_h}">'
+            f'<animate attributeName="width" from="0" to="724" begin="{panel_begin:.2f}s" dur="0.5s" fill="freeze"/>'
+            f'</rect></clipPath>'
+            f'<g clip-path="url(#{panel_clip})">'
+            f'<rect x="28" y="{panel_y}" width="724" height="{panel_h}" rx="4" fill="{p["bg"]}" stroke="{p["border"]}"/>'
+            f'<text x="42" y="{panel_y + 24}" fill="{p["accent"]}">── radar: bangkok ──</text>'
+            f'<image x="28" y="{map_y}" width="724" height="280" preserveAspectRatio="none" '
+            f'href="data:image/jpeg;base64,{map_b64}"/>'
+            f'<text x="742" y="{map_y + 270}" text-anchor="end" fill="{p["text"]}" '
+            f'font-size="9" opacity="0.78">© OSM © CARTO</text>'
+            f'<text x="42" y="{panel_y + 338}" fill="{p["text"]}">{stats}</text>'
+            f'</g>'
+        )
+
+        # The sweep is deliberately outside the reveal clip so it keeps
+        # rotating indefinitely after the panel has appeared.
+        svg.append(
+            f'<clipPath id="radar-map"><rect x="28" y="{map_y}" width="724" height="280"/></clipPath>'
+            f'<g opacity="0"><animate attributeName="opacity" to="1" begin="{panel_begin + 0.5:.2f}s" dur="0.01s" fill="freeze"/>'
+            f'<g clip-path="url(#radar-map)" transform="rotate(0 {center_x:.0f} {center_y:.0f})">'
+            f'<animateTransform attributeName="transform" type="rotate" from="0 {center_x:.0f} {center_y:.0f}" '
+            f'to="360 {center_x:.0f} {center_y:.0f}" dur="5s" repeatCount="indefinite"/>'
+            f'<path d="M {center_x:.0f} {center_y:.0f} L {center_x + 350:.0f} {center_y - 58:.0f} '
+            f'A 355 355 0 0 1 {center_x + 355:.0f} {center_y:.0f} Z" fill="{p["accent"]}" opacity="0.08"/>'
+            f'<line x1="{center_x:.0f}" y1="{center_y:.0f}" x2="{center_x + 362:.0f}" y2="{center_y:.0f}" '
+            f'stroke="{p["accent"]}" stroke-width="1.5" opacity="0.55"/>'
+            f'</g></g>'
+        )
     svg.append("</svg>")
     with open(filename, "w") as f:
         f.write("".join(svg))
@@ -126,11 +208,13 @@ def build_svg(p, indicator, now, filename):
 
 def main():
     indicator = fetch_claude_status()
+    radar = radar_bangkok.fetch_radar()
     ict = timezone(timedelta(hours=7))
     now = datetime.now(ict).strftime("%Y-%m-%d %H:%M ICT")
-    build_svg(DARK, indicator, now, "boot.svg")
-    build_svg(LIGHT, indicator, now, "boot-light.svg")
-    print(f"boot.svg + boot-light.svg written — claude: {indicator}")
+    build_svg(DARK, indicator, now, "boot.svg", radar)
+    build_svg(LIGHT, indicator, now, "boot-light.svg", radar)
+    radar_state = "live" if radar else "no signal"
+    print(f"boot.svg + boot-light.svg written — claude: {indicator}, radar: {radar_state}")
 
 
 if __name__ == "__main__":
