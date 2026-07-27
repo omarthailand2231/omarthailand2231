@@ -1,4 +1,4 @@
-# hi, i'm Omar 👋
+# hi, i'm Vinny👋
 
 frontend dev @ **Atomtech** · building things on the side, constantly
 
