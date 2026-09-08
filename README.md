@@ -15,9 +15,7 @@ frontend dev @ **Atomtech** · building things on the side, constantly
 
 ### 🔭 currently building
 
-- **Sol** — a macOS menubar AI agent with screen awareness and a panic-stop button. swift + local LLM brain.
-- **Blood AI** — my flagship discord bot platform (~13k lines), mid-refactor into a plugin architecture
-- **`127.0.0.1:67`** — autonomous sumo robot for a STEM competition. simplicity wins fights.
+i'll add/update later
 
 ### 🛠 stack
 
